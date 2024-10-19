@@ -31,3 +31,5 @@ The Spotify Data Extraction Tool allows users to extract detailed information fr
 - Google Apps Script environment
 - A valid Spotify Developer account to obtain `clientId` and `clientSecret`
 
+##LIVE DATA VISUALIZATION
+- https://udbhav-shrinet.github.io/me/prj/p3.html
