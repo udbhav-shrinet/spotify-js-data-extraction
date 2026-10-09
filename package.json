@@ -1,0 +1,16 @@
+{
+  "name": "spotify-js-data-extraction",
+  "version": "2.0.0",
+  "description": "Automated Spotify Web API playlist track and audio features extraction engine",
+  "main": "spotify-data-extraction.js",
+  "scripts": {
+    "start": "node spotify-data-extraction.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.4.5"
+  },
+  "author": "Udbhav Shrinet",
+  "license": "MIT"
+}

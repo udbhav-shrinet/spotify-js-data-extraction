@@ -1,158 +1,98 @@
-function loadPlaylistData() {
-  const clientId = 'Your client Id'; // Your client ID
-  const clientSecret = 'Your Client Secret'; // Your client secret
-  const playlistId = 'your playlist id'; // Replace with your playlist ID
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(); // Get active sheet
+/**
+ * Spotify Audio Features & Playlist Data Extraction Engine
+ * Automated programmatic extraction of track acoustic profiles, danceability, valence, tempo, and audio metrics.
+ */
 
-  const token = getAccessToken(clientId, clientSecret);
-  Logger.log("Access Token: " + token); // Log the access token
+const axios = require('axios');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+require('dotenv').config();
 
-  const tracks = getPlaylistTracks(token, playlistId);
-  
-  // Clear the sheet before adding new data
-  sheet.clear(); 
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
 
-  // Set the headers in the first row
-  const headers = [
-    'Playlist Name',
-    'Song Name',
-    'Artist Name',
-    'Duration (Minutes)',
-    'Genre',
-    'Danceability',
-    'Energy',
-    'Key',
-    'Loudness',
-    'Speechiness',
-    'Mode',
-    'Acousticness',
-    'Instrumentalness',
-    'Liveness',
-    'Valence',
-    'Tempo',
-    'Release Date',
-    'Popularity',
-    'Album Name',
-    'Artist Followers',
-    'Album/Song Image'
-  ];
-  sheet.appendRow(headers); // Append headers to the sheet
-
-  // Loop through each track and fetch details
-  for (let i = 0; i < tracks.length; i++) {
-    const trackData = tracks[i].track;
-
-    if (!trackData) {
-      Logger.log("Track data is undefined for index: " + i);
-      continue; // Skip this iteration if track data is undefined
+async function getAccessToken() {
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+        console.warn('[!] SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not configured. Please set them in .env');
+        return null;
     }
-
-    const artist = trackData.artists[0]; // First artist
-    if (!artist) {
-      Logger.log("Artist data is undefined for track: " + trackData.name);
-      continue; // Skip if artist is undefined
+    const tokenUrl = 'https://accounts.spotify.com/api/token';
+    const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+    
+    try {
+        const response = await axios.post(tokenUrl, 'grant_type=client_credentials', {
+            headers: {
+                'Authorization': `Basic ${authHeader}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        return response.data.access_token;
+    } catch (err) {
+        console.error('[!] Failed to obtain Spotify access token:', err.message);
+        return null;
     }
-
-    const features = getTrackFeatures(token, trackData.id);
-    const artistDetails = getArtistDetails(token, artist.id);
-
-    // Log the track information for debugging
-    Logger.log("Track: " + trackData.name + ", Artist: " + artist.name);
-
-    // Add track details to the sheet
-    const rowData = [
-      'Add yr playlist name', // I have hardcoded this, bcz i used multiple playlist of different countries and i needed to filter it.
-      trackData.name,            // Song Name
-      artist.name,               // Artist Name
-      (trackData.duration_ms / 1000 / 60).toFixed(2), // Duration in minutes
-      artist.genres ? artist.genres.join(', ') : '', // Genre
-      features ? features.danceability : '',     // Danceability
-      features ? features.energy : '',           // Energy
-      features ? features.key : '',              // Key
-      features ? features.loudness : '',         // Loudness
-      features ? features.speechiness : '',      // Speechiness
-      features ? (features.mode === 1 ? 'Major' : 'Minor') : '', // Mode
-      features ? features.acousticness : '',     // Acousticness
-      features ? features.instrumentalness : '', // Instrumentalness
-      features ? features.liveness : '',         // Liveness
-      features ? features.valence : '',          // Valence
-      features ? features.tempo : '',            // Tempo
-      trackData.album.release_date, // Release Date
-      trackData.popularity,          // Popularity
-      trackData.album.name,          // Album Name
-      artistDetails ? artistDetails.followers.total : '', // Artist Followers
-      trackData.album.images[0] ? trackData.album.images[0].url : '' // Album/Song Image
-    ];
-    sheet.appendRow(rowData); // Append the data to the sheet
-  }
 }
 
-// Function to get the access token
-function getAccessToken(clientId, clientSecret) {
-  const url = 'https://accounts.spotify.com/api/token';
-  const options = {
-    method: 'post',
-    contentType: 'application/x-www-form-urlencoded',
-    payload: 'grant_type=client_credentials',
-    headers: {
-      'Authorization': 'Basic ' + Utilities.base64Encode(clientId + ':' + clientSecret)
-    }
-  };
+async function extractPlaylistAudioFeatures(playlistId) {
+    const token = await getAccessToken();
+    if (!token) return [];
 
-  const response = UrlFetchApp.fetch(url, options);
-  const data = JSON.parse(response.getContentText());
-  return data.access_token; // Return the access token
+    try {
+        console.log(`[*] Fetching tracks for playlist ID: ${playlistId}`);
+        const playlistResp = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const tracks = playlistResp.data.items.map(item => item.track).filter(Boolean);
+        const trackIds = tracks.map(t => t.id).filter(Boolean).join(',');
+
+        console.log(`[*] Querying audio features for ${tracks.length} tracks...`);
+        const featuresResp = await axios.get(`https://api.spotify.com/v1/audio-features?ids=${trackIds}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const featuresMap = {};
+        (featuresResp.data.audio_features || []).forEach(f => {
+            if (f) featuresMap[f.id] = f;
+        });
+
+        return tracks.map(t => {
+            const f = featuresMap[t.id] || {};
+            return {
+                id: t.id,
+                name: t.name,
+                artist: t.artists.map(a => a.name).join(', '),
+                album: t.album.name,
+                danceability: f.danceability || 0,
+                energy: f.energy || 0,
+                valence: f.valence || 0,
+                tempo: f.tempo || 0,
+                loudness: f.loudness || 0,
+                acousticness: f.acousticness || 0
+            };
+        });
+    } catch (err) {
+        console.error('[!] Error extracting playlist data:', err.message);
+        return [];
+    }
 }
 
-// Fetch playlist tracks from Spotify
-function getPlaylistTracks(token, playlistId) {
-  const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
-  const options = {
-    method: 'get',
-    headers: {
-      'Authorization': 'Bearer ' + token
-    }
-  };
-  
-  const response = UrlFetchApp.fetch(url, options);
-  Logger.log("Response Code: " + response.getResponseCode()); // Log response code
-  const data = JSON.parse(response.getContentText());
-
-  if (!data.items) {
-    Logger.log("No tracks found in response: " + JSON.stringify(data));
-    return []; // Return an empty array if no items are found
-  }
-
-  Logger.log("Fetched Tracks: " + JSON.stringify(data.items)); // Log the fetched tracks
-  return data.items; // Return the list of tracks
+async function exportToCSV(data, filename = 'spotify_audio_features.csv') {
+    const csvWriter = createCsvWriter({
+        path: filename,
+        header: [
+            { id: 'id', title: 'TRACK_ID' },
+            { id: 'name', title: 'TRACK_NAME' },
+            { id: 'artist', title: 'ARTIST' },
+            { id: 'album', title: 'ALBUM' },
+            { id: 'danceability', title: 'DANCEABILITY' },
+            { id: 'energy', title: 'ENERGY' },
+            { id: 'valence', title: 'VALENCE' },
+            { id: 'tempo', title: 'TEMPO_BPM' },
+            { id: 'acousticness', title: 'ACOUSTICNESS' }
+        ]
+    });
+    await csvWriter.writeRecords(data);
+    console.log(`[+] Exported ${data.length} track records to ${filename}`);
 }
 
-// Fetch track features from Spotify
-function getTrackFeatures(token, trackId) {
-  const url = `https://api.spotify.com/v1/audio-features/${trackId}`;
-  const options = {
-    method: 'get',
-    headers: {
-      'Authorization': 'Bearer ' + token
-    }
-  };
-
-  const response = UrlFetchApp.fetch(url, options);
-  const data = JSON.parse(response.getContentText());
-  return data; // Return track features
-}
-
-// Fetch artist details from Spotify
-function getArtistDetails(token, artistId) {
-  const url = `https://api.spotify.com/v1/artists/${artistId}`;
-  const options = {
-    method: 'get',
-    headers: {
-      'Authorization': 'Bearer ' + token
-    }
-  };
-
-  const response = UrlFetchApp.fetch(url, options);
-  const data = JSON.parse(response.getContentText());
-  return data; // Return artist details
-}
+module.exports = { getAccessToken, extractPlaylistAudioFeatures, exportToCSV };
