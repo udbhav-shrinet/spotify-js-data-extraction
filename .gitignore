@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.csv
+*.json
+!package.json
+.DS_Store

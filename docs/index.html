@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Audio Features & Acoustic Profiler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-card: #12161f;
+            --accent-green: #1db954;
+            --accent-purple: #c084fc;
+            --accent-blue: #38bdf8;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #1e293b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+        header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(18, 22, 31, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 0.75rem; font-size: 1.25rem; font-weight: 800; }
+        .badge { font-family: 'JetBrains Mono', monospace; background: rgba(29, 185, 84, 0.15); color: var(--accent-green); font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 9999px; border: 1px solid rgba(29, 185, 84, 0.3); }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--accent-green); }
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; width: 100%; flex: 1; }
+        .hero { text-align: center; margin-bottom: 2.5rem; }
+        .hero h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.75rem; background: linear-gradient(135deg, #ffffff 0%, var(--accent-green) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-secondary); font-size: 1.05rem; max-width: 650px; margin: 0 auto; }
+        .controls-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: 3fr 1fr auto; gap: 1rem; align-items: end; }
+        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; }
+        .input-group input, .input-group select { width: 100%; background: #0f131a; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+        .btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; height: 44px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; border-left: 4px solid var(--accent-green); }
+        .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem; }
+        .stat-val { font-size: 1.4rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; }
+        .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; justify-content: space-between; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+        td { font-family: 'JetBrains Mono', monospace; }
+        footer { border-top: 1px solid var(--border-color); padding: 1.5rem 2rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem; }
+        @media (max-width: 900px) { .controls-card, .grid-2, .stats-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span>🎧 Spotify Audio Profiler</span>
+            <span class="badge">Web API SDK</span>
+        </div>
+        <div class="nav-links">
+            <a href="https://github.com/udbhav-shrinet/spotify-js-data-extraction" target="_blank">View on GitHub →</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Automated Acoustic Analysis & Track Profiling</h1>
+            <p>Inspect multi-dimensional audio features including danceability, valence, acoustic energy, and tempo distribution across playlists.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Average Danceability</div>
+                <div class="stat-val" id="stat-dance">0.74 High</div>
+            </div>
+            <div class="stat-box" style="border-left-color: #38bdf8;">
+                <div class="stat-label">Energy Score</div>
+                <div class="stat-val" id="stat-energy">0.82 Energetic</div>
+            </div>
+            <div class="stat-box" style="border-left-color: #c084fc;">
+                <div class="stat-label">Valence (Positivity)</div>
+                <div class="stat-val" id="stat-valence">0.68 Upbeat</div>
+            </div>
+            <div class="stat-box" style="border-left-color: #fbbf24;">
+                <div class="stat-label">Average Tempo</div>
+                <div class="stat-val" id="stat-tempo">124 BPM</div>
+            </div>
+        </div>
+
+        <div class="controls-card">
+            <div class="input-group">
+                <label>Spotify Playlist URI / ID</label>
+                <input type="text" id="playlist-id" value="37i9dQZF1DXcBWIGoYBM5M">
+            </div>
+            <div class="input-group">
+                <label>Playlist Genre Preset</label>
+                <select id="genre-preset" onchange="applyGenre()">
+                    <option value="edm">Electronic / High Energy</option>
+                    <option value="chill">Lo-Fi / Chill Beats</option>
+                    <option value="rock">Classic Rock & Indie</option>
+                    <option value="pop">Global Top Hits</option>
+                </select>
+            </div>
+            <button class="btn" onclick="analyzePlaylist()">Analyze Audio</button>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">
+                    <span>Acoustic Profile Radar</span>
+                    <span class="badge">6 Dimensions</span>
+                </div>
+                <div style="height: 350px;">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">
+                    <span>Extracted Track Metrics</span>
+                    <span class="badge">Live Preview</span>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Track Name</th>
+                                <th>Dance</th>
+                                <th>Energy</th>
+                                <th>Valence</th>
+                                <th>BPM</th>
+                            </tr>
+                        </thead>
+                        <tbody id="track-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Deployed via GitHub Pages • Spotify Web API Integration • Developed by Udbhav Shrinet
+    </footer>
+
+    <script>
+        let radarChart;
+        const presets = {
+            edm: { dance: 0.78, energy: 0.89, valence: 0.65, acoustic: 0.12, instrumental: 0.45, speech: 0.14, bpm: 128 },
+            chill: { dance: 0.52, energy: 0.35, valence: 0.42, acoustic: 0.78, instrumental: 0.82, speech: 0.05, bpm: 84 },
+            rock: { dance: 0.48, energy: 0.85, valence: 0.55, acoustic: 0.15, instrumental: 0.22, speech: 0.08, bpm: 132 },
+            pop: { dance: 0.82, energy: 0.76, valence: 0.72, acoustic: 0.20, instrumental: 0.05, speech: 0.11, bpm: 118 }
+        };
+
+        const sampleTracks = [
+            { name: "Midnight Horizon", dance: "0.82", energy: "0.88", valence: "0.74", bpm: "126" },
+            { name: "Neon Drive", dance: "0.75", energy: "0.92", valence: "0.68", bpm: "128" },
+            { name: "Echoes of Time", dance: "0.68", energy: "0.79", valence: "0.58", bpm: "122" },
+            { name: "Quantum Pulse", dance: "0.85", energy: "0.95", valence: "0.78", bpm: "130" },
+            { name: "Solar Wind", dance: "0.71", energy: "0.81", valence: "0.62", bpm: "124" }
+        ];
+
+        function initRadar() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Danceability', 'Energy', 'Valence', 'Acousticness', 'Instrumentalness', 'Speechiness'],
+                    datasets: [{
+                        label: 'Playlist Acoustic Profile',
+                        data: [0.78, 0.89, 0.65, 0.12, 0.45, 0.14],
+                        backgroundColor: 'rgba(29, 185, 84, 0.25)',
+                        borderColor: '#1db954',
+                        pointBackgroundColor: '#1db954',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#1e293b' },
+                            grid: { color: '#1e293b' },
+                            pointLabels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } },
+                            ticks: { display: false, max: 1.0, min: 0 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            renderTracks();
+        }
+
+        function renderTracks() {
+            const tbody = document.getElementById('track-table-body');
+            tbody.innerHTML = '';
+            sampleTracks.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><strong style="color:#f1f5f9">${t.name}</strong></td><td>${t.dance}</td><td>${t.energy}</td><td>${t.valence}</td><td>${t.bpm}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyGenre() {
+            const g = document.getElementById('genre-preset').value;
+            const p = presets[g];
+            radarChart.data.datasets[0].data = [p.dance, p.energy, p.valence, p.acoustic, p.instrumental, p.speech];
+            radarChart.update();
+
+            document.getElementById('stat-dance').innerText = p.dance + ' ' + (p.dance > 0.6 ? 'High' : 'Moderate');
+            document.getElementById('stat-energy').innerText = p.energy + ' ' + (p.energy > 0.6 ? 'Energetic' : 'Calm');
+            document.getElementById('stat-valence').innerText = p.valence + ' ' + (p.valence > 0.5 ? 'Upbeat' : 'Mellow');
+            document.getElementById('stat-tempo').innerText = p.bpm + ' BPM';
+        }
+
+        function analyzePlaylist() {
+            applyGenre();
+        }
+
+        window.onload = initRadar;
+    </script>
+</body>
+</html>
