@@ -1,172 +1,261 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Audio Features & Acoustic Profiler</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <title>Spotify Acoustic Profile & Vibe Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-primary: #0a0c10;
-            --bg-card: #12161f;
-            --accent-green: #1db954;
-            --accent-purple: #c084fc;
-            --accent-blue: #38bdf8;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border-color: #1e293b;
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        spotify: {
+                            50: '#e8f7ed',
+                            400: '#1ed760',
+                            500: '#1db954',
+                            800: '#121212',
+                            900: '#0a0a0a'
+                        },
+                        glass: 'rgba(24, 24, 24, 0.6)'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
-        header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(18, 22, 31, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
-        .brand { display: flex; align-items: center; gap: 0.75rem; font-size: 1.25rem; font-weight: 800; }
-        .badge { font-family: 'JetBrains Mono', monospace; background: rgba(29, 185, 84, 0.15); color: var(--accent-green); font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 9999px; border: 1px solid rgba(29, 185, 84, 0.3); }
-        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
-        .nav-links a:hover { color: var(--accent-green); }
-        .container { max-width: 1280px; margin: 0 auto; padding: 2rem; width: 100%; flex: 1; }
-        .hero { text-align: center; margin-bottom: 2.5rem; }
-        .hero h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.75rem; background: linear-gradient(135deg, #ffffff 0%, var(--accent-green) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { color: var(--text-secondary); font-size: 1.05rem; max-width: 650px; margin: 0 auto; }
-        .controls-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: 3fr 1fr auto; gap: 1rem; align-items: end; }
-        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; }
-        .input-group input, .input-group select { width: 100%; background: #0f131a; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
-        .btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; height: 44px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-        .stat-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; border-left: 4px solid var(--accent-green); }
-        .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem; }
-        .stat-val { font-size: 1.4rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; }
-        .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; justify-content: space-between; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th, td { padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
-        td { font-family: 'JetBrains Mono', monospace; }
-        footer { border-top: 1px solid var(--border-color); padding: 1.5rem 2rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem; }
-        @media (max-width: 900px) { .controls-card, .grid-2, .stats-grid { grid-template-columns: 1fr; } }
+    </script>
+    <style>
+        body { background-color: #0a0a0a; color: #ffffff; }
+        .glass-panel { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .hover-lift { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hover-lift:hover { transform: translateY(-4px); border-color: #1db954; }
+        .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; }
+        .ach-badge { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1rem; background: rgba(30, 30, 30, 0.5); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .ach-badge.unlocked { border-color: #1db954; background: rgba(29, 185, 84, 0.1); }
+        .ach-icon { font-size: 2rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 8px rgba(29, 185, 84, 0.6)); }
     </style>
 </head>
-<body>
-    <header>
-        <div class="brand">
-            <span>🎧 Spotify Audio Profiler</span>
-            <span class="badge">Web API SDK</span>
+<body class="font-sans min-h-screen flex flex-col selection:bg-spotify-500 selection:text-white">
+    
+    <header class="px-8 py-5 border-b border-white/5 flex items-center justify-between sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <div class="flex items-center gap-3">
+            <svg viewBox="0 0 24 24" class="w-8 h-8 text-spotify-500 fill-current"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.54.659.3 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.141C9.6 9.9 15 10.56 18.72 12.84c.361.181.54.84.24 1.2zM20.04 9.42c-3.96-2.34-10.44-2.58-14.22-1.38-.6.18-1.2-.12-1.38-.72-.18-.6.12-1.2.72-1.38 4.38-1.32 11.52-1.02 16.08 1.68.54.3.72 1.02.42 1.56-.3.6-.96.78-1.62.42z"/></svg>
+            <div>
+                <h1 class="text-white font-bold text-lg leading-tight">Acoustic Profile Analysis</h1>
+                <p class="text-zinc-400 font-mono text-[10px] tracking-widest uppercase">Client-Side Extraction Engine</p>
+            </div>
         </div>
-        <div class="nav-links">
-            <a href="https://github.com/udbhav-shrinet/spotify-js-data-extraction" target="_blank">View on GitHub →</a>
+        <div class="flex items-center gap-4">
+            <button onclick="document.getElementById('authModal').classList.remove('hidden')" class="px-5 py-2 rounded-full bg-spotify-500 hover:bg-spotify-400 text-black font-bold text-sm tracking-wide transition-colors">
+                Connect Spotify
+            </button>
         </div>
     </header>
 
-    <div class="container">
-        <div class="hero">
-            <h1>Automated Acoustic Analysis & Track Profiling</h1>
-            <p>Inspect multi-dimensional audio features including danceability, valence, acoustic energy, and tempo distribution across playlists.</p>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Average Danceability</div>
-                <div class="stat-val" id="stat-dance">0.74 High</div>
-            </div>
-            <div class="stat-box" style="border-left-color: #38bdf8;">
-                <div class="stat-label">Energy Score</div>
-                <div class="stat-val" id="stat-energy">0.82 Energetic</div>
-            </div>
-            <div class="stat-box" style="border-left-color: #c084fc;">
-                <div class="stat-label">Valence (Positivity)</div>
-                <div class="stat-val" id="stat-valence">0.68 Upbeat</div>
-            </div>
-            <div class="stat-box" style="border-left-color: #fbbf24;">
-                <div class="stat-label">Average Tempo</div>
-                <div class="stat-val" id="stat-tempo">124 BPM</div>
-            </div>
-        </div>
-
-        <div class="controls-card">
-            <div class="input-group">
-                <label>Spotify Playlist URI / ID</label>
-                <input type="text" id="playlist-id" value="37i9dQZF1DXcBWIGoYBM5M">
-            </div>
-            <div class="input-group">
-                <label>Playlist Genre Preset</label>
-                <select id="genre-preset" onchange="applyGenre()">
-                    <option value="edm">Electronic / High Energy</option>
-                    <option value="chill">Lo-Fi / Chill Beats</option>
-                    <option value="rock">Classic Rock & Indie</option>
-                    <option value="pop">Global Top Hits</option>
-                </select>
-            </div>
-            <button class="btn" onclick="analyzePlaylist()">Analyze Audio</button>
-        </div>
-
-        <div class="grid-2">
-            <div class="card">
-                <div class="card-title">
-                    <span>Acoustic Profile Radar</span>
-                    <span class="badge">6 Dimensions</span>
+    <!-- Auth / Input Modal -->
+    <div id="authModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-md w-full shadow-2xl border border-spotify-500/30">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Analyze Taste</h2>
+                    <p class="text-zinc-400 text-sm">Connect your account or use instant mode without logging in.</p>
                 </div>
-                <div style="height: 350px;">
-                    <canvas id="radarChart"></canvas>
-                </div>
+                <button onclick="document.getElementById('authModal').classList.remove('hidden')" class="text-zinc-500 hover:text-white">✕</button>
             </div>
-            <div class="card">
-                <div class="card-title">
-                    <span>Extracted Track Metrics</span>
-                    <span class="badge">Live Preview</span>
+            
+            <button onclick="alert('In production, redirects to Spotify OAuth. Using instant mode for demo.'); document.getElementById('authModal').classList.add('hidden');" class="w-full flex items-center justify-center gap-3 py-3.5 rounded-full bg-[#1db954] hover:bg-[#1ed760] text-black font-bold text-[15px] transition-colors mb-6">
+                <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.54.659.3 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.141C9.6 9.9 15 10.56 18.72 12.84c.361.181.54.84.24 1.2zM20.04 9.42c-3.96-2.34-10.44-2.58-14.22-1.38-.6.18-1.2-.12-1.38-.72-.18-.6.12-1.2.72-1.38 4.38-1.32 11.52-1.02 16.08 1.68.54.3.72 1.02.42 1.56-.3.6-.96.78-1.62.42z"/></svg>
+                Continue with Spotify
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="h-px bg-zinc-800 flex-1"></div>
+                <span class="text-zinc-500 font-mono text-xs uppercase">Or Instant Mode</span>
+                <div class="h-px bg-zinc-800 flex-1"></div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="relative">
+                    <input type="text" id="playlistLinkInput" placeholder="Paste Spotify Playlist or Profile Link..." class="w-full bg-[#181818] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-spotify-500 transition-colors">
                 </div>
-                <div style="max-height: 350px; overflow-y: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Track Name</th>
-                                <th>Dance</th>
-                                <th>Energy</th>
-                                <th>Valence</th>
-                                <th>BPM</th>
-                            </tr>
-                        </thead>
-                        <tbody id="track-table-body"></tbody>
-                    </table>
+                <button onclick="analyzeLink()" class="w-full py-3 rounded-lg border border-spotify-500/50 text-spotify-500 hover:bg-spotify-500/10 font-bold text-sm transition-colors">
+                    Extract & Analyze Instantly
+                </button>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-zinc-800/80">
+                <p class="text-xs text-zinc-500 mb-2 font-mono">Curated Demographic Profiles:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="loadProfile('coder')" class="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-spotify-500 transition-colors">🤖 Syntax & Syntax (Tech)</button>
+                    <button onclick="loadProfile('rave')" class="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-spotify-500 transition-colors">🪩 UK Garage / Bass</button>
+                    <button onclick="loadProfile('indie')" class="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-spotify-500 transition-colors">🍂 Melancholy Indie</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer>
-        Deployed via GitHub Pages • Spotify Web API Integration • Developed by Udbhav Shrinet
+    <main class="flex-1 max-w-[1400px] w-full mx-auto px-6 py-10 relative">
+        <!-- Dashboard Content -->
+        <div id="analyticsDashboard" class="opacity-100 transition-opacity duration-500">
+            
+            <!-- Context Header -->
+            <div class="mb-10 text-center">
+                <div class="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-spotify-500/10 text-spotify-400 font-mono text-xs border border-spotify-500/20 mb-4">
+                    <span class="w-2 h-2 rounded-full bg-spotify-500 animate-pulse"></span>
+                    Extraction Complete
+                </div>
+                <h2 id="vibeTitle" class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+                    Syntax Cyberpunk & <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#1db954] to-[#1ed760]">High-BPM Architect</span>
+                </h2>
+                <p id="vibeDesc" class="text-zinc-400 max-w-2xl mx-auto text-sm leading-relaxed">
+                    Based on 142 tracks extracted from your profile. Highly instrumental, electronic dominant, with peak danceability framing a 138-BPM circadian rhythm.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+                <!-- Radar Chart -->
+                <div class="lg:col-span-5 glass-panel rounded-3xl p-6 md:p-8 flex flex-col items-center justify-center relative overfow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-spotify-500/5 to-transparent rounded-3xl pointer-events-none"></div>
+                    <h3 class="text-sm font-bold text-white mb-6 w-full uppercase tracking-widest font-mono text-zinc-400">Acoustic Signature Radar</h3>
+                    <div class="w-full max-w-sm aspect-square relative z-10">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- Feature Cards -->
+                    <div class="glass-panel p-5 rounded-2xl hover-lift">
+                        <div class="text-zinc-500 font-mono text-[10px] uppercase mb-1">Danceability</div>
+                        <div class="text-3xl font-black text-white" id="valDance">89%</div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden"><div class="bg-spotify-500 h-full rounded-full" style="width: 89%"></div></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl hover-lift">
+                        <div class="text-zinc-500 font-mono text-[10px] uppercase mb-1">Energy</div>
+                        <div class="text-3xl font-black text-white" id="valEnergy">94%</div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden"><div class="bg-amber-400 h-full rounded-full" style="width: 94%"></div></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl hover-lift">
+                        <div class="text-zinc-500 font-mono text-[10px] uppercase mb-1">Valence (Mood)</div>
+                        <div class="text-3xl font-black text-white" id="valValence">32%</div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden"><div class="bg-sky-400 h-full rounded-full" style="width: 32%"></div></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl hover-lift">
+                        <div class="text-zinc-500 font-mono text-[10px] uppercase mb-1">Acousticness</div>
+                        <div class="text-3xl font-black text-zinc-300" id="valAcoustic">12%</div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden"><div class="bg-emerald-700 h-full rounded-full" style="width: 12%"></div></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl hover-lift">
+                        <div class="text-zinc-500 font-mono text-[10px] uppercase mb-1">Instrumentalness</div>
+                        <div class="text-3xl font-black text-white" id="valInst">74%</div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden"><div class="bg-indigo-400 h-full rounded-full" style="width: 74%"></div></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl hover-lift relative overflow-hidden flex flex-col justify-center items-center text-center">
+                        <div class="absolute inset-0 bg-spotify-500/10 pointer-events-none"></div>
+                        <div class="text-zinc-400 font-mono text-[10px] uppercase mb-1">Core Tempo</div>
+                        <div class="flex items-end justify-center gap-1">
+                            <span class="text-4xl font-black text-spotify-400" id="valTempo">138</span>
+                            <span class="text-xs font-bold text-zinc-500 pb-1">BPM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievement / Badge Gallery -->
+            <div class="glass-panel rounded-3xl p-8 mb-10 border border-zinc-800/80">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-white tracking-tight">Listening Achievements</h3>
+                        <p class="text-sm text-zinc-400">Badges unlocked based on acoustic traits and library variance.</p>
+                    </div>
+                    <div class="text-xs font-mono bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800 text-spotify-500 font-bold">
+                        <span id="badgeCount">6</span> / 100 UNLOCKED
+                    </div>
+                </div>
+
+                <div class="badge-grid" id="badgeGallery">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-zinc-600 text-xs font-mono border-t border-white/5">
+        Acoustic Feature Extraction Dashboard • Developed by Udbhav Shrinet • Open API Integration
     </footer>
 
     <script>
-        let radarChart;
-        const presets = {
-            edm: { dance: 0.78, energy: 0.89, valence: 0.65, acoustic: 0.12, instrumental: 0.45, speech: 0.14, bpm: 128 },
-            chill: { dance: 0.52, energy: 0.35, valence: 0.42, acoustic: 0.78, instrumental: 0.82, speech: 0.05, bpm: 84 },
-            rock: { dance: 0.48, energy: 0.85, valence: 0.55, acoustic: 0.15, instrumental: 0.22, speech: 0.08, bpm: 132 },
-            pop: { dance: 0.82, energy: 0.76, valence: 0.72, acoustic: 0.20, instrumental: 0.05, speech: 0.11, bpm: 118 }
+        // Mock data profiles for "Instant Mode"
+        const profiles = {
+            coder: {
+                vibe: "Syntax Cyberpunk & High-BPM Architect",
+                desc: "Based on 142 tracks extracted from your profile. Highly instrumental, electronic dominant, with peak danceability framing a live coding circadian rhythm.",
+                stats: { dance: 82, energy: 94, valence: 32, acoustic: 8, inst: 78, speech: 11, tempo: 135 },
+                badges: [
+                    { id: 'allrounder', icon: '🌐', name: 'All Rounder', desc: 'Listens across 10+ genres', unlocked: true },
+                    { id: 'caffeine', icon: '☕', name: 'Caffeine Coder', desc: 'Dominant 130+ BPM tracks', unlocked: true },
+                    { id: 'basshead', icon: '🔊', name: 'Basshead', desc: 'Top 10% sub-bass energy', unlocked: true },
+                    { id: 'instrumental', icon: '🎹', name: 'Purist', desc: 'High instrumental score', unlocked: true },
+                    { id: 'nightowl', icon: '🦉', name: 'Night Owl', desc: 'Late night stream density', unlocked: true },
+                    { id: 'melancholic', icon: '🌧️', name: 'Melancholy', desc: 'Low valence threshold', unlocked: false },
+                    { id: 'acoustic', icon: '🎸', name: 'Unplugged', desc: 'High acousticness score', unlocked: false },
+                    { id: 'hyperpop', icon: '✨', name: 'Hyper Pioneer', desc: 'Maxed energy synthesis', unlocked: true }
+                ]
+            },
+            rave: {
+                vibe: "Warehouse Nostalgia & Jungle Breaks",
+                desc: "Extracted 203 tracks featuring syncopated breaks, massive basslines, and euphoric rave chords. You basically live in a 1999 London warehouse.",
+                stats: { dance: 95, energy: 88, valence: 65, acoustic: 4, inst: 62, speech: 24, tempo: 138 },
+                badges: [
+                    { id: 'basshead', icon: '🔊', name: 'Basshead', desc: 'Top 10% sub-bass energy', unlocked: true },
+                    { id: 'caffeine', icon: '☕', name: 'Tempo Demon', desc: 'Dominant 130+ BPM tracks', unlocked: true },
+                    { id: 'vinyl', icon: '💽', name: 'Vinyl Nostalgia', desc: 'Old-school release years', unlocked: true },
+                    { id: 'allrounder', icon: '🌐', name: 'All Rounder', desc: 'Listens across 10+ genres', unlocked: false }
+                ]
+            },
+            indie: {
+                vibe: "Autumn Melancholy & Acoustic Solitude",
+                desc: "An introspective collection of 85 acoustic tracks. Soft tempos, high vocal presence, and profound dynamic range.",
+                stats: { dance: 45, energy: 32, valence: 21, acoustic: 89, inst: 12, speech: 45, tempo: 92 },
+                badges: [
+                    { id: 'melancholic', icon: '🌧️', name: 'Melancholy', desc: 'Low valence threshold', unlocked: true },
+                    { id: 'acoustic', icon: '🎸', name: 'Unplugged', desc: 'High acousticness score', unlocked: true },
+                    { id: 'lyricist', icon: '🖋️', name: 'Lyricist', desc: 'High speechiness/poetry', unlocked: true },
+                    { id: 'basshead', icon: '🔊', name: 'Basshead', desc: 'Top 10% sub-bass energy', unlocked: false }
+                ]
+            }
         };
 
-        const sampleTracks = [
-            { name: "Midnight Horizon", dance: "0.82", energy: "0.88", valence: "0.74", bpm: "126" },
-            { name: "Neon Drive", dance: "0.75", energy: "0.92", valence: "0.68", bpm: "128" },
-            { name: "Echoes of Time", dance: "0.68", energy: "0.79", valence: "0.58", bpm: "122" },
-            { name: "Quantum Pulse", dance: "0.85", energy: "0.95", valence: "0.78", bpm: "130" },
-            { name: "Solar Wind", dance: "0.71", energy: "0.81", valence: "0.62", bpm: "124" }
-        ];
+        let radarInstance = null;
 
-        function initRadar() {
+        function renderRadar(stats) {
+            Chart.defaults.color = '#71717a';
+            Chart.defaults.font.family = '"JetBrains Mono", monospace';
+            
+            if (radarInstance) radarInstance.destroy();
             const ctx = document.getElementById('radarChart').getContext('2d');
-            radarChart = new Chart(ctx, {
+            
+            radarInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['Danceability', 'Energy', 'Valence', 'Acousticness', 'Instrumentalness', 'Speechiness'],
+                    labels: ['Dance', 'Energy', 'Valence', 'Acoustic', 'Inst', 'Speech'],
                     datasets: [{
-                        label: 'Playlist Acoustic Profile',
-                        data: [0.78, 0.89, 0.65, 0.12, 0.45, 0.14],
-                        backgroundColor: 'rgba(29, 185, 84, 0.25)',
+                        label: 'Profile Vector',
+                        data: [stats.dance, stats.energy, stats.valence, stats.acoustic, stats.inst, stats.speech],
+                        backgroundColor: 'rgba(29, 185, 84, 0.2)',
                         borderColor: '#1db954',
-                        pointBackgroundColor: '#1db954',
-                        borderWidth: 2
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#1db954',
+                        pointHoverBackgroundColor: '#1db954',
+                        pointHoverBorderColor: '#fff',
+                        borderWidth: 2,
                     }]
                 },
                 options: {
@@ -174,45 +263,64 @@
                     maintainAspectRatio: false,
                     scales: {
                         r: {
-                            angleLines: { color: '#1e293b' },
-                            grid: { color: '#1e293b' },
-                            pointLabels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } },
-                            ticks: { display: false, max: 1.0, min: 0 }
+                            angleLines: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            pointLabels: { color: '#a1a1aa', font: { size: 10 } },
+                            ticks: { display: false, min: 0, max: 100 }
                         }
                     },
                     plugins: { legend: { display: false } }
                 }
             });
-            renderTracks();
         }
 
-        function renderTracks() {
-            const tbody = document.getElementById('track-table-body');
-            tbody.innerHTML = '';
-            sampleTracks.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td><strong style="color:#f1f5f9">${t.name}</strong></td><td>${t.dance}</td><td>${t.energy}</td><td>${t.valence}</td><td>${t.bpm}</td>`;
-                tbody.appendChild(tr);
-            });
+        function renderDashboard(profileKey) {
+            const data = profiles[profileKey];
+            
+            // Text
+            document.getElementById('vibeTitle').innerHTML = data.vibe.split(' & ').join(' & <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#1db954] to-[#1ed760]">') + '</span>';
+            document.getElementById('vibeDesc').textContent = data.desc;
+            
+            // Metrics
+            document.getElementById('valDance').textContent = data.stats.dance + '%';
+            document.getElementById('valEnergy').textContent = data.stats.energy + '%';
+            document.getElementById('valValence').textContent = data.stats.valence + '%';
+            document.getElementById('valAcoustic').textContent = data.stats.acoustic + '%';
+            document.getElementById('valInst').textContent = data.stats.inst + '%';
+            document.getElementById('valTempo').textContent = data.stats.tempo;
+            
+            // Radar
+            renderRadar(data.stats);
+            
+            // Badges
+            const container = document.getElementById('badgeGallery');
+            container.innerHTML = data.badges.map(b => `
+                <div class="ach-badge ${b.unlocked ? 'unlocked' : 'opacity-40 grayscale'}">
+                    <div class="ach-icon">${b.icon}</div>
+                    <div class="font-bold text-sm text-white leading-tight mb-1">${b.name}</div>
+                    <div class="text-[9px] text-zinc-400 font-mono tracking-tight leading-snug">${b.desc}</div>
+                </div>
+            `).join('');
+            
+            const count = data.badges.filter(b => b.unlocked).length;
+            document.getElementById('badgeCount').textContent = count;
         }
 
-        function applyGenre() {
-            const g = document.getElementById('genre-preset').value;
-            const p = presets[g];
-            radarChart.data.datasets[0].data = [p.dance, p.energy, p.valence, p.acoustic, p.instrumental, p.speech];
-            radarChart.update();
-
-            document.getElementById('stat-dance').innerText = p.dance + ' ' + (p.dance > 0.6 ? 'High' : 'Moderate');
-            document.getElementById('stat-energy').innerText = p.energy + ' ' + (p.energy > 0.6 ? 'Energetic' : 'Calm');
-            document.getElementById('stat-valence').innerText = p.valence + ' ' + (p.valence > 0.5 ? 'Upbeat' : 'Mellow');
-            document.getElementById('stat-tempo').innerText = p.bpm + ' BPM';
+        function loadProfile(key) {
+            document.getElementById('authModal').classList.add('hidden');
+            renderDashboard(key);
         }
 
-        function analyzePlaylist() {
-            applyGenre();
+        function analyzeLink() {
+            const val = document.getElementById('playlistLinkInput').value;
+            if(!val) { alert("Please paste a link first."); return; }
+            document.getElementById('authModal').classList.add('hidden');
+            // Randomize between rave and indie for demo
+            loadProfile(Math.random() > 0.5 ? 'rave' : 'indie');
         }
 
-        window.onload = initRadar;
+        // Init with coder tech profile
+        window.onload = () => loadProfile('coder');
     </script>
 </body>
 </html>

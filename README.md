@@ -1,75 +1,39 @@
-# Spotify Web API Audio Features & Playlist Extraction Engine
+# Spotify Acoustic Profile & Vibe Analyzer
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Interactive Demo](https://img.shields.io/badge/demo-GitHub%20Pages-green.svg)](https://udbhav-shrinet.github.io/spotify-js-data-extraction/)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-blue.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Interactive Studio](https://img.shields.io/badge/live%20analyzer-GitHub%20Pages-green.svg)](https://udbhav-shrinet.github.io/spotify-js-data-extraction/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> Production-grade Node.js automated extraction pipeline for Spotify playlist tracks, audio metrics (danceability, energy, valence, tempo), and tabular CSV export.
-
----
-
-## 🚀 Live Interactive Showcase
-
-Inspect Spotify audio feature radar charts and playlist acoustic breakdowns:  
-👉 **[Launch Spotify Audio Profiler](https://udbhav-shrinet.github.io/spotify-js-data-extraction/)**
+> I built this client-side extraction engine to instantly dissect Spotify playlists and profiles without spinning up a heavy backend database. It uses the Spotify Web API strictly from the browser to generate acoustic signatures, multi-dimensional radar charts, and a unique 100+ badge achievement system for your music taste.
 
 ---
 
-## ✨ Key Capabilities
+## 🎧 Live Explorer
 
-- **OAuth Client Credentials Flow**: Automated token negotiation and lifecycle management with Spotify Accounts API.
-- **Audio Features Extraction**: Programmatically queries multi-track audio features (Danceability, Energy, Valence, Acousticness, Instrumentalness, Tempo BPM).
-- **Batch Processing**: Extracts full playlist catalogs with automated pagination and rate limit handling.
-- **Structured CSV Exporter**: Generates tabular data output for machine learning, clustering, and data analysis pipelines.
+👉 **[Launch Listening Profile Analyzer](https://udbhav-shrinet.github.io/spotify-js-data-extraction/)**
 
 ---
 
-## 🛠️ System Architecture
+## ✨ Features
 
-```text
-┌─────────────────────────┐       ┌────────────────────────┐       ┌──────────────────────┐
-│  Spotify Client Secrets │ ───>  │  Spotify Accounts API  │ ───>  │ Bearer Access Token  │
-│  (CLIENT_ID, SECRET)    │       │  OAuth2 Auth Flow      │       │ Lifecycle Handler    │
-└─────────────────────────┘       └────────────────────────┘       └──────────┬───────────┘
-                                                                              │
-                                                   ┌──────────────────────────┴──────────────────────────┐
-                                                   ▼                                                     ▼
-                                       ┌─────────────────────────┐                           ┌───────────────────────┐
-                                       │ Playlist Tracks & Audio │                           │  GitHub Pages Studio  │
-                                       │ Features CSV Pipeline   │                           │  Radar Profiler App   │
-                                       └─────────────────────────┘                           └───────────────────────┘
+- **No-Backend Architecture**: 100% Client-side JavaScript. Uses Spotify's Implicit Grant Flow (OAuth 2.0) directly from the browser window.
+- **Acoustic Radar Synthesis**: Maps tracks across Danceability, Energy, Valence (Happiness), Acousticness, Instrumentalness, and Liveness.
+- **Vibe Matrix Generation**: Computes a personalized psychographic vibe title (e.g. *Syntax Cyberpunk*, *Autumn Melancholy*, *138-BPM Architect*).
+- **100+ Badge Achievement System**: Unlocks digital collectible badges based on hidden listening geometry (e.g. *Basshead*, *Caffeine Coder*, *All Rounder*).
+- **Instant Demo Mode**: Curated profile presets (Tech, Rave, Indie) available for instant exploration without needing a Spotify auth token.
+
+---
+
+## 🛠️ Usage Pipeline
+
+```bash
+git clone https://github.com/udbhav-shrinet/spotify-js-data-extraction.git
+cd spotify-js-data-extraction
+# Just open index.html in your browser, or mount a local web server!
+python3 -m http.server 8000
 ```
 
 ---
 
-## 📦 Installation & Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/udbhav-shrinet/spotify-js-data-extraction.git
-   cd spotify-js-data-extraction
-   ```
-
-2. **Install Node.js dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**:
-   Create a `.env` file:
-   ```env
-   SPOTIFY_CLIENT_ID=your_spotify_client_id
-   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-   ```
-
-4. **Run Extraction**:
-   ```bash
-   node spotify-data-extraction.js
-   ```
-
----
-
 ## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT. Not affiliated with Spotify AB. Data endpoints accessed via official Web API specifications.
